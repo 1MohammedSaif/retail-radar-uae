@@ -1,4 +1,4 @@
-# UAE Retail Offer Tracker
+# RetailRadar UAE
 
 An automated data pipeline built with **n8n** that collects publicly available UAE retail offer information, processes and compares incoming records, tracks previously detected promotions, and sends notifications when new offers are found.
 
