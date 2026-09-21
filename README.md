@@ -96,7 +96,7 @@ When a new offer is detected, the workflow sends a Telegram notification contain
 ![Telegram Alert](screenshots/telegram_alert.gif)
 
 
-![Telegram Notification](screenshots/telegram_message.png)
+![Telegram Notification](screenshots/telegram_messgae.png)
 
 ## Skills Demonstrated
 
