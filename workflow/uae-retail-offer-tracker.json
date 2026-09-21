@@ -1,0 +1,470 @@
+{
+  "name": "UAE Retail Offer Tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -208,
+        192
+      ],
+      "id": "f7553282-5b28-40a8-b35b-2f66116516cd",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "flyer_url",
+              "field2": "flyer_url"
+            }
+          ]
+        },
+        "resolve": "preferInput1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.compareDatasets",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        64
+      ],
+      "id": "00a4381b-4b4e-47d8-8f8c-11a0fadba357",
+      "name": "Compare Datasets"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "YOUR_TELEGRAM_CHANNEL",
+        "file": "={{ $json.image_url }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Open Leaflet 🛒",
+                    "additionalFields": {
+                      "url": "={{ $json.flyer_url }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "caption": "=🚨 FRESH UAE OFFERS DETECTED 🚨  \n\n🛒 Store: {{ $json.store }} \n📋 Promotion Name: {{ $json.title }} \n📅 Date: {{ $json.validity }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        48
+      ],
+      "id": "ab3f319e-d600-4573-8053-9b46b8380ad0",
+      "name": "Send a photo message",
+      "webhookId": "1a23129d-bd1f-4695-87f8-422f4220e567",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const months = {\n  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,\n  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11\n};\n\nconst today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\nconst expiredItems = [];\n\nfor (const item of $input.all()) {\n  const validityRaw = item.json.validity || '';\n  let expiryDate = null;\n\n  // Try standard ISO date parsing first\n  if (!isNaN(Date.parse(validityRaw))) {\n    expiryDate = new Date(validityRaw);\n  } else {\n    // Extract date patterns like \"28 Sep\" or \"28 September\"\n    const match = validityRaw.match(/(\\d{1,2})\\s*([a-zA-Z]{3,})/);\n    if (match) {\n      const day = parseInt(match[1], 10);\n      const monthStr = match[2].substring(0, 3).toLowerCase();\n      \n      if (months[monthStr] !== undefined) {\n        // Assume current year (or next year if rolled over)\n        const year = today.getFullYear();\n        expiryDate = new Date(year, months[monthStr], day);\n      }\n    }\n  }\n\n  // If parsed successfully and the date is before today, keep item for cleanup\n  if (expiryDate && expiryDate < today) {\n    expiredItems.push(item);\n  }\n}\n\nreturn expiredItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        384
+      ],
+      "id": "4bd67b5e-e8e5-4a0d-8904-42cf40850123",
+      "name": "Filter Expired Rows"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "YOUR_DATA_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "flyer_history",
+          "cachedResultUrl": "/projects/YOUR_PROJECT_ID/datatables/YOUR_DATA_TABLE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "store": "={{ $('Compare Datasets').item.json.store }}",
+            "flyer_url": "={{ $('Compare Datasets').item.json.flyer_url }}",
+            "title": "={{ $('Compare Datasets').item.json.title }}",
+            "validity": "={{ $('Compare Datasets').item.json.validity }}",
+            "message_id": "={{ $json.result.message_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "store",
+              "displayName": "store",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "flyer_url",
+              "displayName": "flyer_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "validity",
+              "displayName": "validity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        48
+      ],
+      "id": "8475a734-ed6a-47c1-b00d-5c686bda18c1",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "YOUR_DATA_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "flyer_history",
+          "cachedResultUrl": "/projects/YOUR_PROJECT_ID/datatables/YOUR_DATA_TABLE_ID"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "message_id",
+              "keyValue": "={{ $('Filter Expired Rows').item.json.message_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        384
+      ],
+      "id": "917620d4-a5ce-4859-bff5-2570140619d0",
+      "name": "Delete row(s)"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { store: \"Carrefour\", url: \"https://www.wowdeals.me/ae/carrefour/catalogs\" } },\n  { json: { store: \"Lulu\", url: \"https://www.wowdeals.me/ae/lulu/catalogs\" } },\n  { json: { store: \"Viva\", url: \"https://www.wowdeals.me/ae/viva/catalogs\" } },\n  { json: { store: \"Al Maya\", url: \"https://www.wowdeals.me/ae/al-maya/catalogs\" } },\n  { json: { store: \"Choithrams\", url: \"https://www.wowdeals.me/ae/choithrams/catalogs\" } },\n  { json: { store: \"Sava\", url: \"https://www.wowdeals.me/ae/sava/catalogs\" } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        0
+      ],
+      "id": "155c1a19-1e06-4b38-9703-4c933dbcadd8",
+      "name": "Scraper Config"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        240,
+        0
+      ],
+      "id": "6344668f-589f-4a5d-98ab-b0f2037fcf28",
+      "name": "Scrape Retail Website"
+    },
+    {
+      "parameters": {
+        "jsCode": "const activeFlyers = [];\n\n// Change the outer loop and the dynamicStore definition to this:\nconst items = $input.all();\n\nfor (let k = 0; k < items.length; k++) {\n  const item = items[k];\n  const rawHtml = item.json.data; \n  if (!rawHtml) continue;\n\n  const dynamicStore = $('Scraper Config').all()[k].json.store || \"Unknown Store\";\n\n  // Split the page into individual catalog card blocks\n  const cards = rawHtml.split(/class=\"[^\"]*product-container[^\"]*\"|class=\"[^\"]*catalog-item[^\"]*\"/);\n  \n  for (let i = 1; i < cards.length; i++) {\n    const cardContent = cards[i];\n    \n    if (cardContent.includes(\"Expired\")) {\n      continue;\n    }\n    \n    const hrefMatch = cardContent.match(/href=\"([^\"]*\\/catalogs\\/[^\"]*)\"/);\n    const titleMatch = cardContent.match(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/) || cardContent.match(/class=\"product-name\"[^>]*>([\\s\\S]*?)<\\/div>/);\n    const dateMatch = cardContent.match(/class=\"catalog-date\"[^>]*>([\\s\\S]*?)<\\/span>/);\n    \n    // Extract the thumbnail image source URL from the card\n    const imgMatch = cardContent.match(/src=\"([^\"]*)\"/) || cardContent.match(/data-src=\"([^\"]*)\"/);\n\n    if (hrefMatch && hrefMatch[1]) {\n      let flyerUrl = hrefMatch[1];\n      if (!flyerUrl.startsWith('http')) {\n        flyerUrl = `https://www.wowdeals.me${flyerUrl}`;\n      }\n            \n      const cleanTitle = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&#039;/g, \"'\").trim() : \"New Flyer\";\n      const cleanValidity = dateMatch ? dateMatch[1].replace(/<[^>]*>/g, '').trim() : \"Active\";\n      \n      // Clean and handle relative image URLs\n      let imageUrl = imgMatch ? imgMatch[1] : \"\";\n      if (imageUrl && !imageUrl.startsWith('http')) {\n        imageUrl = `https://www.wowdeals.me${imageUrl}`;\n      }\n\n      activeFlyers.push({\n        json: {\n          store: dynamicStore,\n          flyer_url: flyerUrl,\n          title: cleanTitle,\n          validity: cleanValidity,\n          image_url: imageUrl, \n          status: \"Active\"\n        }\n      });\n    }\n  }\n}\n\nreturn activeFlyers;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        0
+      ],
+      "id": "f6d0c4ec-e80b-4913-af09-886227472656",
+      "name": "Parse HTML Flyers"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "YOUR_DATA_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "flyer_history",
+          "cachedResultUrl": "/projects/YOUR_PROJECT_ID/datatables/YOUR_DATA_TABLE_ID"
+        },
+        "filters": {
+          "conditions": []
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        192
+      ],
+      "id": "8cc9c017-0fd9-4319-b409-8366baad045e",
+      "name": "Get Stored Flyers"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b08c726e-e465-4dbc-be30-d19633690187",
+              "name": "flyer_url",
+              "value": "={{ $json.flyer_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        480,
+        192
+      ],
+      "id": "a0a70b78-a9e0-4a71-8071-cdcc810547a0",
+      "name": "Normalized Schema"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "YOUR_DATA_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "flyer_history",
+          "cachedResultUrl": "/projects/YOUR_PROJECT_ID/datatables/YOUR_DATA_TABLE_ID"
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        384
+      ],
+      "id": "3bc303e0-9dc8-4735-8592-9790d3252340",
+      "name": "Get all Active Rows"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Scraper Config",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Stored Flyers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get all Active Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Datasets": {
+      "main": [
+        [
+          {
+            "node": "Send a photo message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        []
+      ]
+    },
+    "Send a photo message": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Expired Rows": {
+      "main": [
+        [
+          {
+            "node": "Delete row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete row(s)": {
+      "main": [
+        []
+      ]
+    },
+    "Scraper Config": {
+      "main": [
+        [
+          {
+            "node": "Scrape Retail Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Retail Website": {
+      "main": [
+        [
+          {
+            "node": "Parse HTML Flyers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse HTML Flyers": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stored Flyers": {
+      "main": [
+        [
+          {
+            "node": "Normalized Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalized Schema": {
+      "main": [
+        [
+          {
+            "node": "Compare Datasets",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get all Active Rows": {
+      "main": [
+        [
+          {
+            "node": "Filter Expired Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Dubai",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "nodeGroups": [],
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}
