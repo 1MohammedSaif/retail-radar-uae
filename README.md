@@ -29,7 +29,7 @@ The workflow currently monitors retail offer pages from selected UAE stores and:
 * Telegram Bot API
 * Scheduled workflows
 
-##Implementation Notes
+## Implementation Notes
 
 I initially considered using Google Sheets to store offer history, but switched to n8n Data Tables so the tracking data could stay within the n8n workflow and avoid adding another external dependency.
 
