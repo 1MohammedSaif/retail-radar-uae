@@ -17,7 +17,7 @@ The workflow currently monitors retail offer pages from selected UAE stores and:
 
 ## Workflow
 
-![n8n Workflow](screenshots/workflow.png)
+![n8n Workflow](screenshots/workflow1.png)
 
 ## Tech Stack
 
